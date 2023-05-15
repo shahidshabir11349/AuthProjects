@@ -75,10 +75,15 @@ namespace AuthManual.Controllers
             }
 
             var resullt = await _signInManager.PasswordSignInAsync(model.Email, model.Password, model.RememberMe,
-                lockoutOnFailure: false);
+                lockoutOnFailure: true);
             if (resullt.Succeeded)
             {
                 return Redirect(returnUrl);
+            }
+
+            if (resullt.IsLockedOut)
+            {
+                return View("LockedOut");
             }
 
             ModelState.AddModelError(string.Empty, "Invalid login attempt.");
