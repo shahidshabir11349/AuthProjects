@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+﻿using AuthManual.Models;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
 namespace AuthManual.Data
@@ -10,5 +11,7 @@ namespace AuthManual.Data
             
         }
 
+        public DbSet<ApplicationUser> ApplicationUser { get; set; }
+            
     }
 }
