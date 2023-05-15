@@ -52,6 +52,32 @@ namespace AuthManual.Controllers
             return View(model);
         }
 
+        [HttpGet] // Display all the properties the user has to enter
+        public IActionResult Login()
+        {
+            return View();
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Login(LoginViewModel model)
+        {
+            if (!ModelState.IsValid)
+            {
+                return View(model);
+            }
+
+            var resullt = await _signInManager.PasswordSignInAsync(model.Email, model.Password, model.RememberMe,
+                lockoutOnFailure: false);
+            if (resullt.Succeeded)
+            {
+                return RedirectToAction("Index", "Home");
+            }
+
+            ModelState.AddModelError(string.Empty, "Invalid login attempt.");
+            return View(model);
+        }
+
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Logout()
