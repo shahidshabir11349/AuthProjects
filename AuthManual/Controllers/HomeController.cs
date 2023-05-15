@@ -1,6 +1,7 @@
 ﻿using AuthManual.Models;
 using Microsoft.AspNetCore.Mvc;
 using System.Diagnostics;
+using Microsoft.AspNetCore.Authorization;
 
 namespace AuthManual.Controllers
 {
@@ -18,6 +19,7 @@ namespace AuthManual.Controllers
             return View();
         }
 
+        [Authorize]
         public IActionResult Privacy()
         {
             return View();

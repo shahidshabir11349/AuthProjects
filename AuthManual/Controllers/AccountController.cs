@@ -22,16 +22,20 @@ namespace AuthManual.Controllers
         //}
 
         [HttpGet] // Display all the properties the user has to enter
-        public async Task<IActionResult> Register()
+        public async Task<IActionResult> Register(string? returnUrl = null)
         {
+            ViewData["ReturnUrl"] = returnUrl;
             var registerViewModel = new RegisterViewModel();
             return View(registerViewModel);
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Register(RegisterViewModel model)
+        public async Task<IActionResult> Register(RegisterViewModel model, string? returnUrl = null)
         {
+            ViewData["ReturnUrl"] = returnUrl;
+            returnUrl = returnUrl ?? Url.Content("~/");
+
             if (!ModelState.IsValid)
             {
                 return View(model);
@@ -42,7 +46,7 @@ namespace AuthManual.Controllers
             if (result.Succeeded)
             {
                 await _signInManager.SignInAsync(user, isPersistent: false);
-                return RedirectToAction("Index", "Home");
+                return Redirect(returnUrl);
             }
             else
             {
@@ -53,15 +57,18 @@ namespace AuthManual.Controllers
         }
 
         [HttpGet] // Display all the properties the user has to enter
-        public IActionResult Login()
+        public IActionResult Login(string? returnUrl = null)     
         {
+            ViewData["ReturnUrl"] = returnUrl;
             return View();
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Login(LoginViewModel model)
+        public async Task<IActionResult> Login(LoginViewModel model, string? returnUrl = null)
         {
+            ViewData["ReturnUrl"] = returnUrl;
+            returnUrl = returnUrl ?? Url.Content("~/");
             if (!ModelState.IsValid)
             {
                 return View(model);
@@ -71,7 +78,7 @@ namespace AuthManual.Controllers
                 lockoutOnFailure: false);
             if (resullt.Succeeded)
             {
-                return RedirectToAction("Index", "Home");
+                return Redirect(returnUrl);
             }
 
             ModelState.AddModelError(string.Empty, "Invalid login attempt.");
