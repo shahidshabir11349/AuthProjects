@@ -1,5 +1,4 @@
 ﻿using AuthManual.Models;
-using Kavenegar.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 
@@ -75,14 +74,14 @@ namespace AuthManual.Controllers
                 return View(model);
             }
 
-            var resullt = await _signInManager.PasswordSignInAsync(model.Email, model.Password, model.RememberMe,
+            var result = await _signInManager.PasswordSignInAsync(model.Email, model.Password, model.RememberMe,
                 lockoutOnFailure: true);
-            if (resullt.Succeeded)
+            if (result.Succeeded)
             {
                 return Redirect(returnUrl);
             }
 
-            if (resullt.IsLockedOut)
+            if (result.IsLockedOut)
             {
                 return View("LockedOut");
             }
@@ -121,7 +120,7 @@ namespace AuthManual.Controllers
                 }
 
                 var code = await _userManager.GeneratePasswordResetTokenAsync(user);
-                var callbackurl = Url.Action("ResetPassword", "Account", new { code, userId = user.Id },
+                var callbackurl = Url.Action("ResetPassword", "Account", new { code = code, userId = user.Id },
                     protocol: HttpContext.Request.Scheme);
 
                 return View("ForgotPasswordConfirmation", new ResetPasswordLinkViewModel{Link = callbackurl!});
@@ -133,14 +132,14 @@ namespace AuthManual.Controllers
         // Reset password
 
         [HttpGet] // Display all the properties the user has to enter
-        public IActionResult ResetPassword()
+        public IActionResult ResetPassword(string? code = null)
         {
-            return View();
+            return code == null ? View("Error") : View();
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> ResetPassword(ForgotPasswordViewModel model)
+        public async Task<IActionResult> ResetPassword(ResetPasswordViewModel model)
             // Configure and send a token
         {
             if (ModelState.IsValid)
@@ -152,14 +151,16 @@ namespace AuthManual.Controllers
                     return Content("User Not found.");
                 }
 
-                var code = await _userManager.GeneratePasswordResetTokenAsync(user);
-                var callbackurl = Url.Action("ResetPassword", "Account", new { code, userId = user.Id },
-                    protocol: HttpContext.Request.Scheme);
+                var result = await _userManager.ResetPasswordAsync(user, model.Code, model.Password);
 
-                return View("ForgotPasswordConfirmation", new ResetPasswordLinkViewModel { Link = callbackurl! });
+                if (result.Succeeded)
+                {
+                    return View("ResetPasswordConfirmation");
+                }
+                AddErrors(result );
             }
 
-            return View(model);
+            return View();
         }
 
 
