@@ -1,4 +1,5 @@
 ﻿using AuthManual.Models;
+using Kavenegar.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 
@@ -41,7 +42,7 @@ namespace AuthManual.Controllers
                 return View(model);
             }
 
-            var user = new ApplicationUser{ UserName = model.Email, Email = model.Email, Name = model.Name };
+            var user = new ApplicationUser { UserName = model.Email, Email = model.Email, Name = model.Name };
             var result = await _userManager.CreateAsync(user, model.Password);
             if (result.Succeeded)
             {
@@ -57,7 +58,7 @@ namespace AuthManual.Controllers
         }
 
         [HttpGet] // Display all the properties the user has to enter
-        public IActionResult Login(string? returnUrl = null)     
+        public IActionResult Login(string? returnUrl = null)
         {
             ViewData["ReturnUrl"] = returnUrl;
             return View();
@@ -98,6 +99,68 @@ namespace AuthManual.Controllers
             return RedirectToAction("index", "Home");
         }
 
+        // Forget Password
+        [HttpGet] // Display all the properties the user has to enter
+        public IActionResult ForgotPassword()
+        {
+            return View();
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ForgotPassword(ForgotPasswordViewModel model)
+            // Configure and send a token
+        {
+            if (ModelState.IsValid)
+            {
+                // Checking if user exists
+                var user = await _userManager.FindByEmailAsync(model.Email);
+                if (user == null)
+                {
+                    return Content("User Not found.");
+                }
+
+                var code = await _userManager.GeneratePasswordResetTokenAsync(user);
+                var callbackurl = Url.Action("ResetPassword", "Account", new { code, userId = user.Id },
+                    protocol: HttpContext.Request.Scheme);
+
+                return View("ForgotPasswordConfirmation", new ResetPasswordLinkViewModel{Link = callbackurl!});
+            }
+
+            return View(model);
+        }
+
+        // Reset password
+
+        [HttpGet] // Display all the properties the user has to enter
+        public IActionResult ResetPassword()
+        {
+            return View();
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ResetPassword(ForgotPasswordViewModel model)
+            // Configure and send a token
+        {
+            if (ModelState.IsValid)
+            {
+                // Checking if user exists
+                var user = await _userManager.FindByEmailAsync(model.Email);
+                if (user == null)
+                {
+                    return Content("User Not found.");
+                }
+
+                var code = await _userManager.GeneratePasswordResetTokenAsync(user);
+                var callbackurl = Url.Action("ResetPassword", "Account", new { code, userId = user.Id },
+                    protocol: HttpContext.Request.Scheme);
+
+                return View("ForgotPasswordConfirmation", new ResetPasswordLinkViewModel { Link = callbackurl! });
+            }
+
+            return View(model);
+        }
 
 
         private void AddErrors(IdentityResult result) // Helper method 
