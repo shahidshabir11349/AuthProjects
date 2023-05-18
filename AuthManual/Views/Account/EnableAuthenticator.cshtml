@@ -12,6 +12,12 @@
     @Model.Token
 </p>
 
+<p>
+    Alternatively, scan the QRCode with your mobile phone.
+</p>
+
+<div id="qrCode"></div>
+
 <form method="post">
     <input hidden asp-for="Token"/>
     <div class="form-group">
@@ -19,3 +25,17 @@
     </div>
     <button type="submit" class="btn btn-primary">Submit</button>
 </form>
+
+@section Scripts
+{
+    <script type="text/javascript" src="~/lib/qrcode.js"></script>
+
+    <script type="text/javascript">
+        new QRCode(document.getElementById("qrCode"),
+            {
+                text: @Model.QRCodeUrl,
+                width: 150,
+                height: 150
+            });
+    </script>
+}

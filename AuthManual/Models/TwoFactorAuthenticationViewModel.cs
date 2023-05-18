@@ -7,5 +7,6 @@
 
         // used to register
         public string Token { get; set; }
+        public string QRCodeUrl { get; set; }
     }
 }

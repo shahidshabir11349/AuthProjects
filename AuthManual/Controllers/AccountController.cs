@@ -1,4 +1,5 @@
-﻿using AuthManual.Models;
+﻿using System.Text.Encodings.Web;
+using AuthManual.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 
@@ -8,11 +9,13 @@ namespace AuthManual.Controllers
     {
         private readonly UserManager<IdentityUser> _userManager;
         private readonly SignInManager<IdentityUser> _signInManager;
+        private readonly UrlEncoder _urlEncoder;
 
-        public AccountController(UserManager<IdentityUser> userManager, SignInManager<IdentityUser> signInManager)
+        public AccountController(UserManager<IdentityUser> userManager, SignInManager<IdentityUser> signInManager, UrlEncoder urlEncoder)
         {
             _userManager = userManager;
             _signInManager = signInManager;
+            _urlEncoder = urlEncoder;
         }
 
 
@@ -78,9 +81,12 @@ namespace AuthManual.Controllers
                 lockoutOnFailure: true);
             if (result.Succeeded)
             {
+                if (result.RequiresTwoFactor)
+                {
+                    return RedirectToAction("VerifyAuthenticatorCode", new { returnUrl, model.RememberMe });
+                }
                 return Redirect(returnUrl);
             }
-
             if (result.IsLockedOut)
             {
                 return View("LockedOut");
@@ -167,6 +173,8 @@ namespace AuthManual.Controllers
         public async Task<IActionResult> EnableAuthenticator() 
             // the method will be used anytime the user wants to enable authentication
         {
+            string AuthenticationUriFormat = "otpauth://totp/{0}:{1}?secret={2}&issuer={0}&digits=6";
+
             // this will find the user that is logged in
             var user = await _userManager.GetUserAsync(User);
 
@@ -175,8 +183,10 @@ namespace AuthManual.Controllers
 
             // Generating a new token
             var token = await _userManager.GetAuthenticatorKeyAsync(user);
+            string AuthenticatorUri = string.Format(AuthenticationUriFormat, _urlEncoder.Encode("ManualAuth"),
+                _urlEncoder.Encode(user.Email), token);
 
-            var model = new TwoFactorAuthenticationViewModel { Token = token };
+            var model = new TwoFactorAuthenticationViewModel { Token = token , QRCodeUrl = AuthenticatorUri};
             return View(model);
 
         }
@@ -200,6 +210,47 @@ namespace AuthManual.Controllers
                 }
             }
             return View("AuthenticationConfirmation");
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> VerifyAuthenticatorCode(bool rememberMe, string returnurl = null)
+        {
+            var user = await _signInManager.GetTwoFactorAuthenticationUserAsync();
+            if (user == null)
+            {
+                return View("Error");
+            }
+            ViewData["ReturnUrl"] = returnurl;
+            return View(new VerifyAuthenticatorViewModel { ReturnUrl = returnurl, RememberMe = rememberMe });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> VerifyAuthenticatorCode(VerifyAuthenticatorViewModel model)
+        {
+            model.ReturnUrl ??= Url.Content("~/");
+            if (!ModelState.IsValid)
+            {
+                return View(model);
+            }
+
+            var result = await _signInManager.TwoFactorAuthenticatorSignInAsync(model.Code, model.RememberMe, rememberClient:false);
+
+            if (result.Succeeded)
+            {
+                return LocalRedirect(model.ReturnUrl);
+            }
+
+            if (result.IsLockedOut)
+            {
+                return View("LockedOut");
+            }
+            else
+            {
+                ModelState.AddModelError(string.Empty, "Invalid Code.");
+                return View(model);
+            }
+
         }
 
         private void AddErrors(IdentityResult result) // Helper method 
