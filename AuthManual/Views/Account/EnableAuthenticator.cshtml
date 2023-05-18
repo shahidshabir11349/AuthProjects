@@ -1,0 +1,21 @@
+﻿@model TwoFactorAuthenticationViewModel
+@{
+    ViewData["Title"] = "EnableAuthenticator";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<p>
+    Please enter the below code in your authenticator app:
+</p>
+
+<p>
+    @Model.Token
+</p>
+
+<form method="post">
+    <input hidden asp-for="Token"/>
+    <div class="form-group">
+        Enter Code: <input class="form-control" type="text" asp-for="Code"/>
+    </div>
+    <button type="submit" class="btn btn-primary">Submit</button>
+</form>
