@@ -27,6 +27,11 @@ builder.Services.Configure<IdentityOptions>(opt =>
     opt.Lockout.MaxFailedAccessAttempts = 2;
 
 });
+
+builder.Services.ConfigureApplicationCookie(option =>
+{
+    option.AccessDeniedPath = new PathString("/Home/AccessDenied");
+});
  
 var app = builder.Build();
 

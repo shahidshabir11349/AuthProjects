@@ -19,7 +19,7 @@ namespace AuthManual.Controllers
             return View();
         }
 
-        [Authorize]
+        [Authorize(Roles = "Admin")]
         public IActionResult Privacy()
         {
             return View();
@@ -29,6 +29,12 @@ namespace AuthManual.Controllers
         public IActionResult Error()
         {
             return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
+        }
+
+
+        public IActionResult AccessDenied()
+        {
+            return View();
         }
     }
 }
