@@ -1,5 +1,8 @@
 ﻿using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
 
 namespace AuthManual.Models
 {
@@ -23,5 +26,9 @@ namespace AuthManual.Models
 
         [Required]
         public string Name { get; set; }
+
+        
+        public IEnumerable<SelectListItem> RoleList { get; set; }
+        public string RoleSelected { get; set; }
     }
 }

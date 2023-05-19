@@ -1,22 +1,28 @@
 ﻿using System.Text.Encodings.Web;
 using AuthManual.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
 
 namespace AuthManual.Controllers
 {
+    [Authorize]
     public class AccountController : Controller
     {
         private readonly UserManager<IdentityUser> _userManager;
+        private readonly RoleManager<IdentityRole> _roleManager;
         private readonly SignInManager<IdentityUser> _signInManager;
         private readonly UrlEncoder _urlEncoder;
 
-        public AccountController(UserManager<IdentityUser> userManager, SignInManager<IdentityUser> signInManager, UrlEncoder urlEncoder)
+        public AccountController(UserManager<IdentityUser> userManager, SignInManager<IdentityUser> signInManager, 
+            UrlEncoder urlEncoder, RoleManager<IdentityRole> roleManager)
         {
             _userManager = userManager;
             _signInManager = signInManager;
             _urlEncoder = urlEncoder;
-        }
+            _roleManager = roleManager;
+        } 
 
 
         //public IActionResult Index()
@@ -24,14 +30,39 @@ namespace AuthManual.Controllers
         //    return View();
         //}
 
+        [AllowAnonymous]
         [HttpGet] // Display all the properties the user has to enter
         public async Task<IActionResult> Register(string? returnUrl = null)
         {
+            // If admin role doesn't exist
+            if (!await _roleManager.RoleExistsAsync("Admin"))
+            {
+                // create role
+                await _roleManager.CreateAsync(new IdentityRole("Admin"));
+                await _roleManager.CreateAsync(new IdentityRole("User"));
+            }
+
+            List<SelectListItem> listItems = new List<SelectListItem>();
+            listItems.Add( new SelectListItem()
+            {
+                Value = "Admin",
+                Text = "Admin"
+            });
+            listItems.Add(new SelectListItem()
+            {
+                Value = "User",
+                Text = "User"
+            });
+
             ViewData["ReturnUrl"] = returnUrl;
-            var registerViewModel = new RegisterViewModel();
+            var registerViewModel = new RegisterViewModel()
+            {
+                RoleList = listItems
+            };
             return View(registerViewModel);
         }
 
+        [AllowAnonymous]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Register(RegisterViewModel model, string? returnUrl = null)
@@ -48,6 +79,16 @@ namespace AuthManual.Controllers
             var result = await _userManager.CreateAsync(user, model.Password);
             if (result.Succeeded)
             {
+                if (model.RoleSelected == "Admin")
+                {
+                    await _userManager.AddToRoleAsync(user, "Admin");
+                }
+                else
+                {
+                    await _userManager.AddToRoleAsync(user, "User");
+                }
+
+
                 await _signInManager.SignInAsync(user, isPersistent: false);
                 return Redirect(returnUrl);
             }
@@ -59,6 +100,7 @@ namespace AuthManual.Controllers
             return View(model);
         }
 
+        [AllowAnonymous]
         [HttpGet] // Display all the properties the user has to enter
         public IActionResult Login(string? returnUrl = null)
         {
@@ -66,6 +108,7 @@ namespace AuthManual.Controllers
             return View();
         }
 
+        [AllowAnonymous]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Login(LoginViewModel model, string? returnUrl = null)
@@ -105,12 +148,14 @@ namespace AuthManual.Controllers
         }
 
         // Forget Password
+        [AllowAnonymous]
         [HttpGet] // Display all the properties the user has to enter
         public IActionResult ForgotPassword()
         {
             return View();
         }
 
+        [AllowAnonymous]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> ForgotPassword(ForgotPasswordViewModel model)
@@ -136,13 +181,14 @@ namespace AuthManual.Controllers
         }
 
         // Reset password
-
+        [AllowAnonymous]
         [HttpGet] // Display all the properties the user has to enter
         public IActionResult ResetPassword(string? code = null)
         {
             return code == null ? View("Error") : View();
         }
 
+        [AllowAnonymous]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> ResetPassword(ResetPasswordViewModel model)
