@@ -1,8 +1,39 @@
-﻿
+﻿@model IEnumerable<ApplicationUser>
 @{
     ViewData["Title"] = "Index";
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
 
-<h1>Index</h1>
+<br/>
 
+<div class="row">
+    <div class="col-6">
+        <h2 class="text-primary">User List</h2>
+    </div>
+</div>
+<div class="p-4 border rounded">
+    @if (Model.Any())
+    {
+        <table class="table table-striped border">
+            <tr class="table-secondary">
+                <th>
+                    Email
+                </th>
+                <th>
+                    Name
+                </th>
+                <th>
+                    Roles
+                </th>
+            </tr>
+            @foreach (var item in Model)
+            {
+                <tr>
+                    <td>@item.Email</td>
+                    <td>@item.Name</td>
+                    <td>@item.Role</td>
+                </tr>
+            }
+        </table>
+    }
+</div>
