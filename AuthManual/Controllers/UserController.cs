@@ -136,6 +136,20 @@ namespace AuthManual.Controllers
 
             return RedirectToAction("Index", "User");
         }
-        
+
+        [HttpPost]
+        public IActionResult Delete(string userId)
+        {
+            var dbUser = _db.ApplicationUser.FirstOrDefault(u => u.Id == userId);
+            if (dbUser == null)
+            {
+                return NotFound();
+            }
+
+            _db.ApplicationUser.Remove(dbUser);
+            _db.SaveChanges();
+            TempData["success"] = "User deleted successfully.";
+            return RedirectToAction("Index", "User");
+        }
     }
 }
