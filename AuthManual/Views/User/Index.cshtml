@@ -38,6 +38,8 @@
                             <form asp-controller="User" asp-action="Delete" asp-route-userId="@item.Id">
                                 <a class="btn btn-info" asp-action="Edit" asp-controller="User" asp-route-userId="@item.Id">Edit</a>
                                 
+                                <a asp-action="ManageUserClaims" asp-route-userId="@item.Id" class="btn btn-primary">Claims</a>
+
                                 @if (item.LockoutEnd == null || item.LockoutEnd < DateTime.Now)
                                 {
                                     // Lock

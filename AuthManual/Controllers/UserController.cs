@@ -1,4 +1,5 @@
-﻿using AuthManual.Data;
+﻿using System.Security.Claims;
+using AuthManual.Data;
 using AuthManual.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
@@ -33,7 +34,7 @@ namespace AuthManual.Controllers
                 else
                 {
                     user.Role = roles.FirstOrDefault(u => u.Id == role.RoleId)!.Name;
-                } 
+                }
             }
 
             return View(userLisT);
@@ -66,6 +67,7 @@ namespace AuthManual.Controllers
         }
 
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(ApplicationUser user)
         {
             if (ModelState.IsValid)
@@ -138,6 +140,7 @@ namespace AuthManual.Controllers
         }
 
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public IActionResult Delete(string userId)
         {
             var dbUser = _db.ApplicationUser.FirstOrDefault(u => u.Id == userId);
@@ -149,6 +152,71 @@ namespace AuthManual.Controllers
             _db.ApplicationUser.Remove(dbUser);
             _db.SaveChanges();
             TempData["success"] = "User deleted successfully.";
+            return RedirectToAction("Index", "User");
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> ManageUserClaims(string userId)
+        {
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user == null)
+            {
+                return NotFound();
+            }
+
+            var existingUserClaims = await _userManager.GetClaimsAsync(user);
+
+            var model = new UserClaimsViewModel()
+            {
+                UserId = userId
+            };
+            foreach (var claim in ClaimStore.ClaimsList)
+            {
+                UserClaim userClaim = new UserClaim()
+                {
+                    ClaimType = claim.Type
+                };
+                if (existingUserClaims.Any(u => u.Type == claim.Type))
+                {
+                    userClaim.IsSelected = true;
+                }
+
+                model.UserClaims.Add(userClaim);
+            }
+
+            return View(model);
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> ManageUserClaims(UserClaimsViewModel userClaimsViewModel)
+        {
+            var user = await _userManager.FindByIdAsync(userClaimsViewModel.UserId);
+            if (user == null)
+            {
+                return NotFound();
+            }
+
+            var claims = await _userManager.GetClaimsAsync(user);
+            var delResult =
+                await _userManager.RemoveClaimsAsync(user, claims); // removing all claims before adding/re-adding them
+
+            if (!delResult.Succeeded)
+            {
+                TempData["error"] = "Error while removing claims.";
+                return View(userClaimsViewModel);
+            }
+
+            var result = await _userManager.AddClaimsAsync(user, userClaimsViewModel.UserClaims
+                .Where(u => u.IsSelected)
+                .Select(u => new Claim(u.ClaimType, u.IsSelected.ToString())));
+
+            if (!result.Succeeded)
+            {
+                TempData["error"] = "Error while removing claims.";
+                return View(userClaimsViewModel);
+            }
+
+            TempData["success"] = "Claims updated successfully.";
             return RedirectToAction("Index", "User");
         }
     }
