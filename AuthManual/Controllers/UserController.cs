@@ -108,6 +108,34 @@ namespace AuthManual.Controllers
 
             return View(user);
         }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult LockUnlock(string userId)
+        {
+            var dbUser = _db.ApplicationUser.FirstOrDefault(u => u.Id == userId);
+            if (dbUser == null)
+            {
+                return NotFound();
+            }
+
+            if (dbUser.LockoutEnd != null && dbUser.LockoutEnd > DateTime.Now)
+            {
+                // User is locked and we have to unlock
+                dbUser.LockoutEnd = DateTime.Now;
+                TempData["success"] = "User unlocked successfully";
+            }
+            else
+            {
+                // User is not locked 
+                dbUser.LockoutEnd = DateTimeOffset.Now.AddYears(50);
+                TempData["success"] = "User locked successfully";
+            }
+
+            _db.SaveChanges();
+
+            return RedirectToAction("Index", "User");
+        }
         
     }
 }
