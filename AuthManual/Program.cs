@@ -33,6 +33,18 @@ builder.Services.ConfigureApplicationCookie(option =>
     option.AccessDeniedPath = new PathString("/Home/AccessDenied");
 });
 
+
+builder.Services.AddAuthorization(options =>
+{
+    // Creating a policy
+    options.AddPolicy("Admin", policy => policy.RequireRole("Admin"));
+    options.AddPolicy("adminOrSuperAdmin", policy => policy.RequireAssertion(context => (
+            context.User.IsInRole("admin") && context.User
+                .HasClaim(c => c.Type == "Create" && c.Value == "True") // user is admin And can Create
+        ) || context.User.IsInRole("SuperAdmin")
+        ));
+});
+
 builder.Services.AddControllersWithViews();
 builder.Services.AddRazorPages();
 var app = builder.Build();
